@@ -1,14 +1,17 @@
-use std::{fs, io::{prelude::*, BufReader}, net::{TcpListener, TcpStream}, thread, time::Duration};
+use std::{fs, io::{prelude::*, BufReader}, net::{TcpListener, TcpStream}, thread::{self}, time::Duration};
+
+use web_server_rs::ThreadPool;
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:8000").unwrap();
+    let pool = ThreadPool::new(4);
 
     println!("Ready to connect!");
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
 
-        thread::spawn(|| {
+        pool.execute(|| {
             handle_connections(stream);
         });
     }
@@ -22,6 +25,7 @@ fn handle_connections(mut stream: TcpStream) {
 
     let (status_line, filename) = match &request_line[..] {
         "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "index.html"),
+        // ...TEST SLEEP RESPONSE...
         "GET /sleep HTTP/1.1" => {
             thread::sleep(Duration::from_secs(5));
             ("HTTP/1.1 200 OK", "index.html")
